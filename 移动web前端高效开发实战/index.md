@@ -652,3 +652,313 @@ a:hover { color: #foo; }
 > ​	导入功能在原生CSS就有相应的实现，但在实际开发过程中并不推荐开发者使用。原生CSS通过"@import"关键字实现导入功能存在的两大弊端，首先，"@import"导入规则必须于先于除了"@charset"外的其他CSS规则执行。其次，导入的文件需要等待引用其父文件下载解析才被执行，如此，丢失了CSS并行下载的能力，加大了资源加载的开销
 >
 > ​	Less提供的导入方法是在编码阶段被引入的，在最终代码中合并成单个CSS文件。除此之外，还提供了导入选项来更灵活地引入第三方文件
+
+
+
+## 面向对象
+
+- 原型和原型链
+
+> 在javaScript中每个对象都有一个指向其原型对象的内部引用，而这个原型对象又通过引用指向其原型，直到某个对象的原型为null，这种一级一级的链结构就被称为原型链
+
+> 首先，原型：`__proto__`属性是对象所独有， `prototype`属性是函数所独有。当我们想访问一个对象上某个属性时，如果在对象内部找不到，它会往`__proto__`属性所指向的那个对象（父对象）找，一直找，知道`__proto__`属性的终点`null`，就会返回 `undefinded`。通过`__proto__`属性将对象链接起来的这条链路就时原型链
+
+- 创造对象和生成原型链
+
+  - （1）使用字面量创造对象
+
+  `var o = {a: 1};`
+
+  - (2) 使用构造器创造对象
+
+  ```js
+  function Person (name) {
+      this.name = name || 'Jxiang';
+  };
+  var p = new Person('小张');
+  ```
+
+  - （3）使用Object.create创造对象
+
+    > 该方法是ES5新增，可以通过一个对象原型创造一个新的对象，新对象原型即为使用create方法传入的第一个参数。
+
+    `Object.create(prototype, descriptors)`
+
+- ECMAScript6的 Class 和 Extends
+
+```js
+class People {				// 定义一个类People
+    constructor (name) {	// constructor函数，必须存在，接受实例化参数
+        this.name = name;
+    }
+    getName () {			// 类的属性
+        console.log(this.name)；
+    }
+}
+var p = new People('Jxiang')； // 实例化一个People类
+p.getName()					 // 调用实例getName方法，输出Jxiang
+```
+
+```js
+// class 中可以进行静态声明， 添加static关键字即可
+class People {
+    static sayHello () {
+        console.log('hello world');
+    }
+}
+People.sayHello() // 不需要实例化，直接用类调用静态方法
+```
+
+```js
+// Extends 关键字配合 Class实现继承
+class Student extends People {
+    constructor (name, grade) {			// 声明constructor
+     	super(name); 				   // 继承父类的this对象
+        this.grade = grade;
+    }
+    getGrade () {					   // Student类的属性 
+        console.log(this,grade);
+    }
+}
+var s = new Student('Jxiang', 18);		// 实例化Student类
+s.getName();						  // 调用继承的属性，输出 'Jxiang'
+s.getGrade();						  // 调用Student类的属性，输出18
+```
+
+
+
+## 仿原生相册
+
+- 在 `Header`标签添加 `Viewport`
+
+`<meta name="viewport" content="width=device-width, initial-scale=1">`
+
+- 在`Body`元素中添加小相片列表
+
+```html
+<div class="gallery">
+    <div class="item">
+        <img src="images/1.jpg">
+    </div>
+    <div class="item">
+        <img src="images/2.jpg">
+    </div>
+</div>
+```
+
+- 添加相册样式
+
+```css
+.gallery {
+    width: 100px;				  /* 设置相册的狂赌为屏幕宽度 */
+    display: flex;				  /* 相册采用flex布局 */
+    flex-flow: row wrap;		   /* 相册每一项为横向排列，并且换行 */
+}
+.gallery .item { flex: 1; }       	/* 每一项平均排列 */
+.gallery .item img { width: 33vw; } /* 图片宽度始值为1 / 3 屏幕宽度 */
+
+/* 添加预览模式下的效果 */
+.gallery.preview .item {
+    display: flex;    			    /* 对子项设置为flex布局 */  
+    margin: auto;				   /* 设置margin为auto实现图片居中显示 */
+}
+.gallery.preview .item img {
+    max-width: 100vw;				/* 设置预览图片的最大宽度为屏幕宽度 */ 
+    max-height: 100vh;				/* 设置预览图片的最大高度为屏幕高度 */ 
+    width: initial;					/* 初始化图片宽度，覆盖之前设置的宽度 */
+}
+/* 禁止浏览器默认的触摸行为 */
+.gallery.preview {
+    touch-action: none;
+}
+```
+
+- 监听相册`Click`事件，用户点击相片时，将相册切换到预览模式。
+
+```js
+var $gallery = document.querySelector('.gallery');
+var itemsLength = document.querySelectorAll('.item').length;
+$gallery.addEventListener('click', function (e) {
+    // 监听单击事件，切换相册的css class来实现预览和普通模式的切换
+    var classList = $galler.classList,
+        css_preview = 'preview';
+    if (classList.contains(css_preview)) {
+        classList.remove(css_preview);
+        // 在非预览模式下，相册的宽度为100vw
+        $gallery.style.width = 100 + 'vw';
+    } else {
+        classList.add(css_preview);
+        // 在预览模式下，所有的图片横着排成一排，相册的总宽度为每一个项目长度总和
+        $gallery.style.width = 100 * itemsLength + 'vw';
+    }
+})
+```
+
+- 通过监听touchstrat、touchmove和touchend事件来实现滑动手势功能，在touchstart事件中，记录当前手指的位置
+
+```js
+$gallery.addEventListener('touchstart', function (e) {
+    // 触摸开始时，记住当前手指的位置
+    startOffsetX = e.changeTouches[0].pageX;
+    // 手指滑动的时候，禁止动画
+    $gallery.classList.remove('animation');
+});
+```
+
+- 在 `touchmove`事件中，使图片随着手指拖曳移动
+
+```js
+$gallery.addEventListener('touchmove', function (e) {
+    isTouchstart = true;
+    // 计算手指的水平移动量
+    var dx = e.changeTouches[0].pageX - startOffsetX;
+    // 调用move方法，设置gallery元素的transform,移动图片
+    move(currentTranX + dx);
+})
+```
+
+- 图片位置移动采用css3的transform属性实现
+
+```js
+function (dx) {
+    $gallery.style.transform = "translate(" + dx + "px, 0)";
+}
+```
+
+- 在`touchend`事件中，判断手指移动的范围是否超过图片宽度的一半，如果达到一半，则切换图片，否则还原图片的位置
+
+```js
+$gallery.addEventListener('touchend', function (e) {
+    if (isTouchstart) {
+        // 在移动图片的时候，需要动画，动画采用css3的transition实现
+        $gallery.classList.add('animation');
+        var dx = e.changeTouches[0].pageX - startOffsetX; // 计算偏移量
+        // 如果偏移量超出gallery宽度的一半
+        if (Math.abs(dx) > width / 2) {
+            // 处理临界值
+            if (currentTranX <= 0 && currentTranX > -width * itemsLength) {
+                if (dx > 0) {						// 如果手指向右滑动
+                    if (currentTranX < 0) {			 // 如果图片不是显示第一张
+                        currentTranX = currentTranX + width;
+                    }
+                } else if (currentTranX > -width * (itemsLength - 1)) {
+                    // 如果手指向右滑动，并且当前图片不是显示之后一张
+                    currentTranX = currentTranX - width;
+                }
+            }
+        }
+        // 如果为超出图片的宽度一半，拖曳停止，将图片的位置还原
+        // 如果超出了图片宽度的一半，将切换到上一张或者下一张
+        move(currentTranX);
+    }
+    isTouchstart = false;
+})
+```
+
+
+
+## 用Canvas制作刮刮卡
+
+- 原理： 在中奖或者未中奖两张图片中随机出现一张，然后在图片上方用Canvas绘制一个灰色蒙层，同时监听鼠标或者手势移动来绘制一个透明图形，这样就能看到蒙层下方真实的图片，从而实现刮刮卡的效果
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+	<meta charset="UTF-8">
+    /* 设置视口宽度、初始缩放 */
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>刮刮卡</title>
+    <style type="text/css">
+    	/* 设置容器的大小和位置 */
+        .container {
+            width: 320px;
+            margin: 10px auto 20px auto;
+            min-height: 300px;
+        }
+    </style>
+</head>
+<body>
+	<div class="container">
+        <canvas></canvas>
+    </div>
+</body>
+</html>
+```
+
+
+
+```js
+// 为了提升用户体验，在拖动时禁止选择文本行为，通过禁用鼠标选择事件实现
+var bodyStyle = document.body.style;
+bodyStyle.mozUserSelect = 'none';
+bodyStyle.webkitUserSelect = 'none';
+```
+
+```js
+var img = new Image();							// 实例化一个图片类
+var canvas = document.querySelector('canvas');	  // 拿到canvas的DOM对象
+canvas.style.backgroundColor = 'transparent';	  // canvas的背景为透明
+canvas.style.position = 'absolute';				 // canvas的定位方式为绝对定位
+var imgs = ['bg-01.jpg', 'bg-02.jpg'];			 // 中奖和未中奖两个图片
+var num = Math.floor(Math.random()*2);			 // 随机生成0或1
+img.src = imgs[num];						    // 图片的实例对象设置图像url 
+```
+
+```js
+// 进入主体部分，等待图片加载完成后，定义初始化的属性和事件函数，蒙层通过layer方法绘制。当按下鼠标或者单机手势时，获取当前坐标信息，并绘制透明小圆点
+img.addEventListener('load', function (e) {
+    var ctx;
+    var w = img.width,				// 获取图片宽度
+        h = img.height;				// 获取图片高度
+    var offsetX = canvas.offsetLeft,	 // 获取canvas相对于左边界的偏移
+        offsetY = canvas.offsetTop;	 // 获取canvas相对于上边界的偏移
+    var mousedown = false;			// 防止手势操作画出手机边界
+    function layer (ctx) {		 	// 绘制蒙层
+        ctx.fillStyle = 'gray';		// 蒙层颜色
+        ctx.fillRect(0, 0, w, h); 	// 蒙层的位置和大小
+    }
+    
+    function eventDown (e) {
+        e.preventDefault();			// 鼠标或者手势按下时触发的事件回调
+        mousedown = true;
+    }
+    function eventUp (e) {
+        e.preventDefault();			// 鼠标或手势松开时触发的事件回调
+        mousedown = false;
+    }
+    function eventMove (e) {
+        e.preventDefault();		// 鼠标或手势移动时触发的事件回调
+        if (mousedown) {
+            // 拿到TouchList对象中最后一个事件对象
+            if (e.changedTouches) {
+                e = e.changedTouches[e.changedTouches.length-1];
+            }
+            // 获得当前鼠标或者手势的坐标
+            var x = (e.clientX + document.body.scrollLeft || e.pageX) - offsetX || 0,
+                y = (e.clientY + document.body.scrollTop || e.pageY) - offsetY || 0;
+            ctx.beginPath();					// 创建一个新的路径
+            ctx.arc(x, y, 20, 0, Math.PI * 2);	  // 绘制弧线
+            ctx.fill();							// 填充路径
+        }
+    }
+    
+    canvas.width = w;
+    canvas.height = h;
+    canvas.style.backgroundImage = 'url(' + img.src + ')';
+    canvas.style.backgroundSize = 'cover';
+    ctx = canvas.getContext('2d');
+    ctx.fillStyle = 'transparent';
+    ctx.fillRect(0, 0, w, h);
+    layer(ctx);											 // 绘制蒙层
+    ctx.globalCompositeOperation = 'destination-out';		// 路径与原图像重叠部分透明
+    canvas.addEventListener('touchstart', eventDown);
+    canvas.addEventListener('touchend', eventUp);
+    canvas.addEventListener('touchmove', eventMove);
+    canvas.addEventListener('mousedown', eventDown);
+    canvas.addEventListener('mouseup', eventUp);
+    canvas.addEventListener('mousemove', eventMove);
+})；
+```
+
